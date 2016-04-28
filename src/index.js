@@ -1,3 +1,6 @@
+const WEBSOCKET_CONNECTING_CHECK_INTERVAL = 10
+const WEBSOCKET_CONNECTION_TIMEOUT = 10000
+
 /**
  * Formats an error response from GraphQL server request.
  */
@@ -53,8 +56,25 @@ export default class RelayWebSocketNetworkLayer {
       .catch(error => request.reject(error))
   }
 
+  _makeSureConnected() {
+    return new Promise((resolve, reject) => {
+      if (this._ws.readyState === WebSocket.OPEN) return resolve()
+      const timeout = setTimeout(() => {
+        clearInterval(checkInterval) // eslint-disable-line no-use-before-define
+        reject()
+      }, WEBSOCKET_CONNECTION_TIMEOUT)
+      const checkInterval = setInterval(() => {
+        if (this._ws.readyState !== WebSocket.OPEN) return
+        clearTimeout(timeout)
+        clearInterval(checkInterval)
+        resolve()
+      }, WEBSOCKET_CONNECTING_CHECK_INTERVAL)
+    })
+  }
+
   sendQueries(requests) {
-    return this._sendQueries(requests)
+    return this._makeSureConnected()
+      .then(this._sendQueries.bind(this, requests))
       .then(({ results }) => {
         results.forEach((result, i) => {
           if (result.hasOwnProperty('errors')) {

@@ -1,5 +1,5 @@
 {
-  "name": "uranium",
+  "name": "relay-web-sockets",
   "version": "0.0.0",
   "description": "Universal extension of React styles.",
   "main": "lib/index.js",
