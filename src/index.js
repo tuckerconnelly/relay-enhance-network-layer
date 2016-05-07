@@ -1,6 +1,3 @@
-const WEBSOCKET_CONNECTING_CHECK_INTERVAL = 10
-const WEBSOCKET_CONNECTION_TIMEOUT = 10000
-
 /**
  * Formats an error response from GraphQL server request.
  */
@@ -30,11 +27,8 @@ function formatRequestErrors(request, errors) {
 }
 
 export default class RelayWebSocketNetworkLayer {
-  _currentRequestID = 0;
-
-  constructor(ws, extra) {
-    this._ws = ws
-    this._extra = extra || {}
+  constructor(wsrr) {
+    this._wsrr = wsrr
   }
 
   sendMutation(request) {
@@ -56,26 +50,9 @@ export default class RelayWebSocketNetworkLayer {
       .catch(error => request.reject(error))
   }
 
-  _makeSureConnected() {
-    return new Promise((resolve, reject) => {
-      if (this._ws.readyState === WebSocket.OPEN) return resolve()
-      const timeout = setTimeout(() => {
-        clearInterval(checkInterval) // eslint-disable-line no-use-before-define
-        reject()
-      }, WEBSOCKET_CONNECTION_TIMEOUT)
-      const checkInterval = setInterval(() => {
-        if (this._ws.readyState !== WebSocket.OPEN) return
-        clearTimeout(timeout)
-        clearInterval(checkInterval)
-        resolve()
-      }, WEBSOCKET_CONNECTING_CHECK_INTERVAL)
-    })
-  }
-
   sendQueries(requests) {
-    return this._makeSureConnected()
-      .then(this._sendQueries.bind(this, requests))
-      .then(({ results }) => {
+    return this._sendQueries(requests)
+      .then(results => {
         results.forEach((result, i) => {
           if (result.hasOwnProperty('errors')) {
             const error = new Error(
@@ -104,46 +81,13 @@ export default class RelayWebSocketNetworkLayer {
 
   _sendMutation(request) {
     // TODO Handle files
-    return new Promise(resolve => {
-      const thisID = ++this._currentRequestID
-
-      this._ws.send(JSON.stringify({
-        messageID: thisID,
-        query: request.getQueryString(),
-        ...this._extra,
-      }))
-
-      const listener = this._ws.addEventListener('message', message => {
-        const response = JSON.parse(message.data)
-        if (response.messageID !== thisID) return
-
-        this._ws.removeEventListener(listener)
-        resolve(response)
-      })
-    })
+    return this._wsrr.request('query', request.getQueryString())
   }
 
   _sendQueries(requests) {
-    return new Promise((resolve, reject) => {
-      const thisID = ++this._currentRequestID
-
-      this._ws.send(JSON.stringify({
-        messageID: thisID,
-        queries: requests.map(request => request.getQueryString()),
-        ...this._extra,
-      }))
-
-      const listener = message => {
-        const response = JSON.parse(message.data)
-        if (response.messageID !== thisID) return
-
-        this._ws.removeEventListener('message', listener)
-
-        if (response.error) reject(response.error)
-        else resolve(response)
-      }
-
-      this._ws.addEventListener('message', listener)
-    })
+    return this._wsrr.request(
+      'query',
+      requests.map(request => request.getQueryString()),
+    )
   }
 }
