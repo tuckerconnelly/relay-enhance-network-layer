@@ -1,7 +1,7 @@
 {
-  "name": "relay-web-sockets",
-  "version": "0.0.0",
-  "description": "Universal extension of React styles.",
+  "name": "relay-enhance-network-layer",
+  "version": "0.0.1",
+  "description": "A higher-order function for enhancing Relay network layers.",
   "main": "lib/index.js",
   "scripts": {
     "prebuild": "rm -rf lib",
@@ -11,12 +11,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/tuckerconnelly/uranium.git"
+    "url": "https://github.com/tuckerconnelly/generic-relay-network-layer.git"
   },
-  "homepage": "https://github.com/tuckerconnelly/uranium.git",
+  "homepage": "https://github.com/tuckerconnelly/generic-relay-network-layer.git",
   "keywords": [
     "react",
-    "uranium"
+    "relay"
   ],
   "author": "Tucker Connelly <web@tuckerconnelly.com>",
   "license": "MIT",
@@ -30,8 +30,6 @@
     "eslint-plugin-babel": "^3.1.0",
     "eslint-plugin-react": "^3.14.0"
   },
-  "peerDependencies": {
-    "ws-request-response": "^0.0.1"
-  },
+  "peerDependencies": {},
   "dependencies": {}
 }

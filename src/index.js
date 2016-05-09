@@ -26,68 +26,47 @@ function formatRequestErrors(request, errors) {
   }).join('\n')
 }
 
-export default class RelayWebSocketNetworkLayer {
-  constructor(wsrr) {
-    this._wsrr = wsrr
-  }
+export default networkLayer => ({
+  sendMutation: request => networkLayer.sendMutation(request)
+    .then(({ result }) => {
+      if (result.hasOwnProperty('errors')) {
+        const error = new Error(
+          'Server request for mutation `' + request.getDebugName() + '` ' +
+          'failed for the following reasons:\n\n' +
+          formatRequestErrors(request, result.errors)
+        )
+        error.source = result
+        request.reject(error)
+        return
+      }
 
-  sendMutation(request) {
-    return this._sendMutation(request)
-      .then(({ result }) => {
+      request.resolve({ response: result.data })
+    })
+    .catch(error => request.reject(error)),
+
+  sendQueries: requests => networkLayer.sendQueries(requests)
+    .then(results => {
+      results.forEach((result, i) => {
         if (result.hasOwnProperty('errors')) {
           const error = new Error(
-            'Server request for mutation `' + request.getDebugName() + '` ' +
+            'Server request for query `' + requests[i].getDebugName() + '` ' +
             'failed for the following reasons:\n\n' +
-            formatRequestErrors(request, result.errors)
+            formatRequestErrors(requests[i], result.errors)
           )
           error.source = result
-          request.reject(error)
+          requests[i].reject(error)
           return
         }
 
-        request.resolve({ response: result.data })
+        if (!result.hasOwnProperty('data')) {
+          requests[i].reject(new Error(
+            'Server response was missing for query `' + requests[i].getDebugName() +
+            '`.'
+          ))
+        }
+
+        requests[i].resolve({ response: result.data })
       })
-      .catch(error => request.reject(error))
-  }
-
-  sendQueries(requests) {
-    return this._sendQueries(requests)
-      .then(results => {
-        results.forEach((result, i) => {
-          if (result.hasOwnProperty('errors')) {
-            const error = new Error(
-              'Server request for query `' + requests[i].getDebugName() + '` ' +
-              'failed for the following reasons:\n\n' +
-              formatRequestErrors(requests[i], result.errors)
-            )
-            error.source = result
-            requests[i].reject(error)
-            return
-          }
-
-          if (!result.hasOwnProperty('data')) {
-            requests[i].reject(new Error(
-              'Server response was missing for query `' + requests[i].getDebugName() +
-              '`.'
-            ))
-          }
-
-          requests[i].resolve({ response: result.data })
-        })
-      })
-  }
-
-  supports() { return false }
-
-  _sendMutation(request) {
-    // TODO Handle files
-    return this._wsrr.request('query', request.getQueryString())
-  }
-
-  _sendQueries(requests) {
-    return this._wsrr.request(
-      'query',
-      requests.map(request => request.getQueryString()),
-    )
-  }
-}
+    }),
+  supports: networkLayer.supports,
+})
