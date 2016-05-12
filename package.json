@@ -11,9 +11,9 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/tuckerconnelly/generic-relay-network-layer.git"
+    "url": "https://github.com/tuckerconnelly/relay-enhance-network-layer.git"
   },
-  "homepage": "https://github.com/tuckerconnelly/generic-relay-network-layer.git",
+  "homepage": "https://github.com/tuckerconnelly/relay-enhance-network-layer.git",
   "keywords": [
     "react",
     "relay"
