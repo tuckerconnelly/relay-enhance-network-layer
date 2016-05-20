@@ -5,5 +5,16 @@ This wraps the `sendQueries` and `sendMutations` of a Relay NetworkLayer in high
 
 ## Usage
 
+```js
+import enhanceNetworkLayer from 'relay-enhance-network-layer'
+
+const myNetworkLayer = enhanceNetworkLayer({
+  sendMutation: request => myMutationSender.fetch(request.getQueryString()),
+  sendQueries: requests =>
+  myQueriesSender.fetch(requests.map(request => request.getQueryString())),
+  supports: () => false,
+})
+```
+
 ## License
 MIT
