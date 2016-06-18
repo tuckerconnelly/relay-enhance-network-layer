@@ -28,7 +28,7 @@ function formatRequestErrors(request, errors) {
 
 export default networkLayer => ({
   sendMutation: request => networkLayer.sendMutation(request)
-    .then(({ result }) => {
+    .then(result => {
       if (result.hasOwnProperty('errors')) {
         const error = new Error(
           'Server request for mutation `' + request.getDebugName() + '` ' +
